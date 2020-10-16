@@ -1,5 +1,6 @@
 from utils import SQL
 import config, time
+from vk_api.utils import get_random_id
 
 
 class InteractionSQL():
@@ -17,8 +18,8 @@ class InteractionSQL():
         return Message_From_SQL.message("start")
 
 
-    def update_user(self, userId, text):
-        self.sql.update_user_relations(userId, text)
+    def update_user(self, userId, text, network):
+        self.sql.update_user_relations(userId, text, network)
         return Message_From_SQL.message("update")
 
 
@@ -27,15 +28,16 @@ class InteractionSQL():
 
 
     def process(self, sendMessage, cond=False, **kwargs):
+        # kwargs["bot"]
         while True:
-            userMessages = self.sql.get_message()
+            userMessages = self.sql.get_message(kwargs["network"])
             print(userMessages)
 
             for message in userMessages:
                 print("Юзер", message[1], "отправил сообщение", message[0])
 
                 if cond:
-                    sendMessage(user_id=message[0], message=message[2], random_id=kwargs["randomId"])
+                    sendMessage(user_id=message[0], message=message[2], random_id=get_random_id())
                 else:
                     sendMessage(message[0], message[2])
 

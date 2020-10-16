@@ -18,7 +18,7 @@ vk_sess = vk_api.VkApi(token=config.tokenVk)
 vk = vk_sess.get_api()
 longpoll = VkLongPoll(vk_sess)
 
-vkbot = VKbot(msg)
+vkbot = VKbot(vk.messages.send)
 process(vkbot.process)
 
 for event in longpoll.listen():
@@ -37,7 +37,8 @@ for event in longpoll.listen():
             except Exception as err:
                 print(err)'''
         try:
-            msg(event.user_id, message)
+            if message:
+                msg(event.user_id, message)
         except Exception as err:
             print("ERROR")
             print(err)

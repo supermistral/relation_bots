@@ -20,7 +20,7 @@ class SQL():
         self.cur = self.conn.cursor()
 
     def create_table(self):
-        self.cur.execute("CREATE TABLE IF NOT EXISTS %s (user_id TEXT, user_id_to TEXT, message TEXT, current TEXT DEFAULT '')" %self.tableName)
+        self.cur.execute("CREATE TABLE IF NOT EXISTS %s (user_id TEXT, user_id_to TEXT, message TEXT DEFAULT '', current TEXT DEFAULT '', network TEXT)" %self.tableName)
         self.conn.commit()
 
 
@@ -29,7 +29,7 @@ class SQL():
     #    self.cur.execute("INSERT INTO %s (user_id) VALUES (%s)" %(self.tableName, userId))
 
 
-    def update_user_relations(self, userId, userIdTo):
+    def update_user_relations(self, userId, userIdTo, network):
         """
         Вставка новой строки с юзером и адресатом из написанного им сообщения
         """
@@ -39,7 +39,7 @@ class SQL():
         if self._check_user_relations(userId, userIdTo):
             self.cur.execute("UPDATE %s SET current = ? WHERE user_id = ? AND user_id_to = ?" %self.tableName, ("1", userId, userIdTo))
         else:
-            self.cur.execute("INSERT INTO %s (user_id, user_id_to, current) VALUES (?, ?, ?)" %self.tableName, (userId, userIdTo, "1"))
+            self.cur.execute("INSERT INTO %s (user_id, user_id_to, current, network) VALUES (?, ?, ?, ?)" %self.tableName, (userId, userIdTo, "1", network))
         self.conn.commit()
 
 
@@ -54,7 +54,7 @@ class SQL():
         return False
 
 
-    def _update_message(self, userId, message):
+    def _update_message(self, userId, message):     # UserId - массив с userid
         """
         Обновление ячейки сообщения юзера
         """
@@ -86,29 +86,24 @@ class SQL():
             self._update_message([userId], messageOld[0] + message)
     
 
-    def get_message(self):
+    def get_message(self, network):
         """
         Получение сообщений запросом из строки, где юзер является адресатом
 
         Затем обнуление этой ячейки
         """
-        # userIdTo = self.select_user_id_to(userId)
-        values = self._select_message_from_user_id_to()
+        values = self._select_message_from_user_id_to(network)
         # print(values)
         answer = list(filter(self._check_current, values))
-        # print(answer)
-        # print([arr[1] for arr in answer])
         self._update_message([arr[1] for arr in answer], '')
-
-        # self.cur.execute("UPDATE %s SET message = '' WHERE current = '1'" %self.tableName)
         return answer
 
 
-    def _select_message_from_user_id_to(self):
+    def _select_message_from_user_id_to(self, network):
         """
         Выборка id адресата, id юзера и сообщения от всех активных пользователей
         """
-        return self.cur.execute("SELECT user_id_to, user_id, message FROM %s WHERE message != ? AND current = ?" %self.tableName, ("", "1")).fetchall()
+        return self.cur.execute("SELECT user_id_to, user_id, message FROM %s WHERE message != ? AND current = ? AND network = ?" %self.tableName, ("", "1", network)).fetchall()
 
 
     def _check_current(self, value):
